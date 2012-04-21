@@ -6,7 +6,7 @@ room = ->
 
 all_rooms = ->
   rooms = Rooms.find({}, { sort: {time: -1}}).fetch()
-  return rooms.slice(0,5)
+  return rooms.slice(0,5).reverse()
 
 is_in_room = ->
   return Session.get("roomID")
