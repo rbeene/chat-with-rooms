@@ -1,12 +1,30 @@
 Messages = new Meteor.Collection "messages"
 Rooms    = new Meteor.Collection "rooms"
+Users     = new Meteor.Collection "users"
 
 room = ->
   return Rooms.findOne(Session.get('roomID'))
 
+announce_new_user = (roomID) ->
+  Messages.insert
+          name: "Server Message",
+          roomID: Session.get("roomID"),
+          message: "#{Session.get('name')} has entered the room"
+          created: new Date()
+
+announce_departure = (roomID) ->
+  Messages.insert
+          name: "Server Message",
+          roomID: Session.get("roomID"),
+          message: "#{Session.get('name')} has left the room"
+          created: new Date()
+
 all_rooms = ->
   rooms = Rooms.find({}, { sort: {time: -1}}).fetch()
   return rooms.slice(0,5).reverse()
+
+has_provided_name = ->
+  return Session.get("name")
 
 is_in_room = ->
   return Session.get("roomID")
@@ -18,7 +36,7 @@ if root.Meteor.is_client
   window.Rooms = Rooms
 
   root.Template.hello.greeting = ->
-    "Welcome to Chat with Rooms"
+    "Welcome to Chat with Rooms #{Session.get('name')||''}"
 
   Template.existing_rooms.rooms = ->
     return all_rooms()
@@ -35,22 +53,27 @@ if root.Meteor.is_client
           name: room_name
           created: new Date()
         Session.set("roomID", room)
+        announce_new_user(room)
       return false
 
     'click #leave_room': (event) ->
       event.preventDefault()
+      announce_departure(Session.get("roomID"))
       Session.set("roomID", "")
 
   Template.room_link.events =
     'click .room_link': (event) ->
       event.preventDefault()
       Session.set("roomID", $(this).attr("_id"))
+      announce_new_user(room)
       return false
 
   Template.room.room_name = ->
     room = Rooms.findOne(Session.get('roomID'))
     return room.name
 
+  Template.room.has_provided_name = ->
+    return has_provided_name()
 
   Template.room.is_in_room = ->
     return is_in_room();
@@ -66,11 +89,10 @@ if root.Meteor.is_client
     'keyup #messageBox': (event) ->
       if event.type == "keyup" && event.which == 13 # [ENTER]
         new_message = $("#messageBox")
-        name = $("#name")
 
         # Save values into Mongo
         Messages.insert
-          name: name.val(),
+          name: Session.get('name'),
           roomID: Session.get("roomID"),
           message: new_message.val(),
           created: new Date()
@@ -81,3 +103,14 @@ if root.Meteor.is_client
 
         # Make sure new chat messages are visible
         $("#chat").scrollTop 9999999;
+
+  Template.name_prompt.events =
+    'submit': (event) ->
+      event.preventDefault()
+      name = $("#enter_name").val()
+      if name == ""
+        $("#name_errors").html("Seriously, I need a name")
+      else
+        $("#name_errors").html("")
+        Session.set("name", name)
+      return false

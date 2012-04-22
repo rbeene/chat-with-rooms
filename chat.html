@@ -18,30 +18,41 @@
 </template>
 
 <template name='room'>
-  {{#if is_in_room}}
-    <div id='room'>
-      <h3>{{room_name}}</h3>
-      <a href='' id='leave_room'>Leave Room</a>
-    </div>
-    {{> messages}}
-    {{> entry}}
-  {{else}}
-    <div id="create_room">
-      <p>If you'd like to create a room, fill out this form.</p>
-      <div id='create_room_errors'></div>
-      <input name='room_title' type='text' placeholder="Enter Room Title" id='create_room_name'></input>
-      <input type='submit' value='Create Room' id='create_room_submit'/>
-    </div>
-    <div id='existing_rooms'>
-      {{> existing_rooms}}
-    </div>
-
+  {{#if has_provided_name}}
+    {{#if is_in_room}}
+      <div id='room'>
+        <h3>{{room_name}}</h3>
+        <a href='' id='leave_room'>Leave Room</a>
+      </div>
+      {{> messages}}
+      {{> entry}}
+    {{else}}
+      <div id="create_room">
+        <p>If you'd like to create a room, fill out this form.</p>
+        <div id='create_room_errors'></div>
+        <input name='room_title' type='text' placeholder="Enter Room Title" id='create_room_name'></input>
+        <input type='submit' value='Create Room' id='create_room_submit'/>
+      </div>
+      <div id='existing_rooms'>
+        {{> existing_rooms}}
+      </div>
+    {{/if}}
+  {{ else }}
+    {{> name_prompt}}
   {{/if}}
+</template>
+
+<template name='name_prompt'>
+  <h3>So who do we have here?</h3>
+  <div id='name_errors'></div>
+  <form action ='' id='name_form'>
+    <input type='text' placeholder='Enter your name' id='enter_name'></input>
+    <input type='submit' value='Submit' id='name_submit'>
+  </form>
 </template>
 
 <template name="entry">
   <p>
-    <input type="text" id="name" placeholder="Your name">
     <input type="text" id="messageBox" placeholder="What do you want to say?">
   </p>
 </template>
