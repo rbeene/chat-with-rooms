@@ -18,13 +18,7 @@
 <template name='room'>
   {{#if has_provided_name}}
     {{#if is_in_room}}
-      <div id='room'>
-        <h3>{{room_name}}</h3>
-        <a href='' id='leave_room'>Leave Room</a>
-      </div>
-      {{> messages}}
-      {{> entry}}
-      {{scroll_to_bottom_of_chat_window}}
+      {{> in_room}}
     {{else}}
       <div id="create_room">
         <p>If you'd like to create a room, fill out this form.</p>
@@ -41,6 +35,16 @@
   {{ else }}
     {{> name_prompt}}
   {{/if}}
+</template>
+
+<template name='in_room'>
+  <div id='room'>
+    <h3>{{room_name}}</h3>
+    <a href='' id='leave_room'>Leave Room</a>
+  </div>
+  {{> messages}}
+  {{> entry}}
+  {{scroll_to_bottom_of_chat_window}}
 </template>
 
 <template name='name_prompt'>
@@ -68,15 +72,22 @@
 </template>
 
 <template name='room_link'>
-  <li><a href='' class='room_link' room_id='{{_id}}'>{{name}}</a></li>
+  <li><a href='' class='room_link' room_id='{{_id}}'>{{name}} ({{participant_count}})</a></li>
 </template>
 
 <template name="messages">
-  <div id="chat">
+  <div id="chat" style="float:left">
     {{#each messages}}
       {{> message}}
     {{/each}}
   </div>
+  <div id="participants" style="float:left">
+    <h4>Total Participants: {{total_participants_for_room}}</h4>
+    {{#each participants}}
+      {{> participant}}
+    {{/each}}
+  </div>
+  <div style='clear:both'></div> 
 </template>
 
 <template name="message">
@@ -85,4 +96,8 @@
   {{else}}
     <p>{{name}}: {{message}}</p>
   {{/if}}
+</template>
+
+<template name='participant'>
+  <div class='participant'>{{name}}</div>
 </template>

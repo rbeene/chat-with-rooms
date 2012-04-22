@@ -1,9 +1,31 @@
 Messages = new Meteor.Collection "messages"
 Rooms    = new Meteor.Collection "rooms"
 Users     = new Meteor.Collection "users"
+Participants = new Meteor.Collection "participants"
 
 room = ->
   return Rooms.findOne(Session.get('roomID'))
+
+get_participants_for_room = (roomID) ->
+  return Participants.find({'active': true, 'roomID' : roomID}).fetch()
+
+total_participants_for_room = (roomID) ->
+  return get_participants_for_room(roomID).length
+
+add_participant = (roomID) ->
+  participantID = Participants.insert
+    name: Session.get('name'),
+    userID: Session.get('userID'),
+    active: true,
+    roomID: roomID
+    created: utc_time_stamp()
+  announce_new_user(roomID)
+  Session.set("participantID", participantID)
+
+remove_participant = ->
+  Participants.update(Session.get('participantID'), {$set: {active: false}})
+  announce_departure(Session.get('roomID'))
+  return true
 
 local_time_stamp = (time) ->
   obj     = new Date(time)
@@ -26,14 +48,12 @@ utc_time_stamp = ()->
   return new Date(Date.UTC(year, month, date, hours, minutes))
 
 announce_new_user = (roomID) ->
-  console.log("room ID is #{roomID}")
   message = Messages.insert
     name: "Server Message",
     roomID: roomID,
     message: "#{Session.get('name')} has entered the room on ",
     type: 'announcement',
     created: utc_time_stamp()
-  console.log(message)
 
 announce_departure = (roomID) ->
   Messages.insert
@@ -56,9 +76,11 @@ is_in_room = ->
 root = global ? window
 
 if root.Meteor.is_client
-  window.Messages = Messages
-  window.Rooms = Rooms
-
+  window.Messages     = Messages
+  window.Rooms        = Rooms
+  window.Participants = Participants
+  window.Users        = Users
+  
   root.Template.hello.greeting = ->
     "Welcome to Chat with Rooms #{Session.get('name')||''}"
 
@@ -78,29 +100,41 @@ if root.Meteor.is_client
         $("#create_room_errors").html("Type in a name buddy")
       else
         $("#create_room_errors").html("")
-        room = Rooms.insert
+        roomID = Rooms.insert
           name: room_name
           created: utc_time_stamp()
-        Session.set("roomID", room)
+        Session.set("roomID", roomID)
+        add_participant(roomID)
         announce_new_user(room)
       return false
 
     'click #leave_room': (event) ->
       event.preventDefault()
-      announce_departure(Session.get("roomID"))
+      remove_participant()
       Session.set("roomID", "")
 
   Template.room_link.events =
     'click .room_link': (event) ->
       event.preventDefault()
-      Session.set("roomID", $(this).attr("_id"))
-      announce_new_user($(this).attr("_id"))
+      roomID = $(this).attr("_id")
+      Session.set("roomID", roomID)
+      add_participant(roomID)
       $("#chat").scrollTop 9999999;
       return false
+
+  Template.room_link.participant_count = (room) ->
+    return total_participants_for_room(this._id)
 
   Template.room.room_name = ->
     room = Rooms.findOne(Session.get('roomID'))
     return room.name
+
+  Template.in_room.events =
+    'beforeunload': (event) ->
+      alert("unloading")
+      remove_participant(Session.get('roomID'))
+      return true
+
 
   Template.room.has_provided_name = ->
     return has_provided_name()
@@ -141,6 +175,12 @@ if root.Meteor.is_client
         # Make sure new chat messages are visible
         $("#chat").scrollTop 9999999;
 
+  Template.messages.total_participants_for_room = ->
+    total_participants_for_room(Session.get('roomID'))
+
+  Template.messages.participants = ->
+    get_participants_for_room(Session.get('roomID'))
+
   Template.name_prompt.events =
     'submit': (event) ->
       event.preventDefault()
@@ -149,6 +189,10 @@ if root.Meteor.is_client
         $("#name_errors").html("Seriously, I need a name")
       else
         $("#name_errors").html("")
+        userID = Users.insert
+          name: name,
+          created: utc_time_stamp()
+        Session.set("userID", userID)
         Session.set("name", name)
       return false
 
