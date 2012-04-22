@@ -4,5 +4,5 @@ Meteor Chat with Rooms
 Chat application with added functionality of Rooms.
 Currently limited to showing the last 5 rooms
 
-Thanks to Tom Blomfield as the code for the chat functionality is pulled from his sample chat application. 
+Thanks to Tom Blomfield as the code for the chat functionality with some modifications is pulled from his sample chat application. 
 Live deploy at http://chat-with-rooms.meteor.com
