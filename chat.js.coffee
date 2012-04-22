@@ -87,7 +87,7 @@ if root.Meteor.is_client
   Template.existing_rooms.rooms = ->
     return all_rooms()
 
-  Template.room.scroll_to_bottom_of_chat_window = ->      
+  Template.in_room.scroll_to_bottom_of_chat_window = ->      
     Meteor.defer ->
       $("#chat").scrollTop 9999999
       $("#messageBox").focus()
@@ -129,13 +129,6 @@ if root.Meteor.is_client
     room = Rooms.findOne(Session.get('roomID'))
     return room.name
 
-  Template.in_room.events =
-    'beforeunload': (event) ->
-      alert("unloading")
-      remove_participant(Session.get('roomID'))
-      return true
-
-
   Template.room.has_provided_name = ->
     return has_provided_name()
 
@@ -143,9 +136,14 @@ if root.Meteor.is_client
     return is_in_room();
 
     # Load all documents in messages collection from Mongo
-  Template.messages.messages = -> 
+  Template.messages.messages = ->
     roomID = Session.get("roomID")
-    Messages.find({'roomID': roomID}, { sort: {time: -1} })
+    messages = Messages.find({'roomID': roomID}, { sort: {time: -1} })
+    messages.observe({
+      added: -> 
+        $("#chat").scrollTop 99999999;
+    })
+    return messages
 
   Template.message.local_timestamp = (message) ->
     return local_time_stamp(this.created)
@@ -197,4 +195,3 @@ if root.Meteor.is_client
       return false
 
 Meteor.startup ->
-  
