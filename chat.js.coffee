@@ -5,19 +5,27 @@ Users     = new Meteor.Collection "users"
 room = ->
   return Rooms.findOne(Session.get('roomID'))
 
+time_stamp = (obj) ->
+  "#{obj.getMonth()+ 1}/#{obj.getDate()}/#{obj.getFullYear()} @ #{obj.getHours()}:#{obj.getMinutes()}"
+
 announce_new_user = (roomID) ->
-  Messages.insert
-          name: "Server Message",
-          roomID: Session.get("roomID"),
-          message: "#{Session.get('name')} has entered the room"
-          created: new Date()
+  time = new Date()
+  console.log("room ID is #{roomID}")
+  message = Messages.insert
+    name: "Server Message",
+    roomID: roomID,
+    message: "#{Session.get('name')} has entered the room on #{time_stamp(time)}"
+    created: time
+  console.log(message)
 
 announce_departure = (roomID) ->
+  time = new Date()
+  console.log(roomID)
   Messages.insert
-          name: "Server Message",
-          roomID: Session.get("roomID"),
-          message: "#{Session.get('name')} has left the room"
-          created: new Date()
+    name: "Server Message",
+    roomID: roomID,
+    message: "#{Session.get('name')} has left the room @#{time_stamp(time)}"
+    created: time
 
 all_rooms = ->
   rooms = Rooms.find({}, { sort: {time: -1}}).fetch()
@@ -40,6 +48,11 @@ if root.Meteor.is_client
 
   Template.existing_rooms.rooms = ->
     return all_rooms()
+
+  Template.room.scroll_to_bottom_of_chat_window = ->      
+    Meteor.defer ->
+      $("#chat").scrollTop 9999999
+      $("#messageBox").focus()
 
   Template.room.events =
     'click #create_room_submit': (event) ->
@@ -65,7 +78,8 @@ if root.Meteor.is_client
     'click .room_link': (event) ->
       event.preventDefault()
       Session.set("roomID", $(this).attr("_id"))
-      announce_new_user(room)
+      announce_new_user($(this).attr("_id"))
+      $("#chat").scrollTop 9999999;
       return false
 
   Template.room.room_name = ->
@@ -89,8 +103,9 @@ if root.Meteor.is_client
     'keyup #messageBox': (event) ->
       if event.type == "keyup" && event.which == 13 # [ENTER]
         new_message = $("#messageBox")
-
+        time = new Date()
         # Save values into Mongo
+
         Messages.insert
           name: Session.get('name'),
           roomID: Session.get("roomID"),
@@ -114,3 +129,6 @@ if root.Meteor.is_client
         $("#name_errors").html("")
         Session.set("name", name)
       return false
+
+Meteor.startup ->
+  
