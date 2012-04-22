@@ -44,8 +44,8 @@ announce_departure = (roomID) ->
     created: utc_time_stamp()
 
 all_rooms = ->
-  rooms = Rooms.find({}, { sort: {time: -1}}).fetch()
-  return rooms.slice(0,5).reverse()
+  rooms = Rooms.find({}, { sort: {time: 1}}).fetch()
+  return rooms.slice(0,5)
 
 has_provided_name = ->
   return Session.get("name")
@@ -71,7 +71,7 @@ if root.Meteor.is_client
       $("#messageBox").focus()
 
   Template.room.events =
-    'click #create_room_submit': (event) ->
+    'submit #room_form': (event) ->
       event.preventDefault()
       room_name = $("#create_room_name").val()
       if room_name == ""

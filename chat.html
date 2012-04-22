@@ -29,8 +29,10 @@
       <div id="create_room">
         <p>If you'd like to create a room, fill out this form.</p>
         <div id='create_room_errors'></div>
-        <input name='room_title' type='text' placeholder="Enter Room Title" id='create_room_name'></input>
-        <input type='submit' value='Create Room' id='create_room_submit'/>
+        <form action ='' id='room_form'>
+          <input name='room_title' type='text' placeholder="Enter Room Title" id='create_room_name'></input>
+          <input type='submit' value='Create Room' id='create_room_submit'/>
+        </form>
       </div>
       <div id='existing_rooms'>
         {{> existing_rooms}}
