@@ -78,5 +78,9 @@
 </template>
 
 <template name="message">
-  <p>{{name}}: {{message}}</p>
+  {{#if message_is_announcement}}
+    <p>{{message}} {{local_timestamp}}</p>
+  {{else}}
+    <p>{{name}}: {{message}}</p>
+  {{/if}}
 </template>

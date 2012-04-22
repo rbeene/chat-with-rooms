@@ -5,27 +5,43 @@ Users     = new Meteor.Collection "users"
 room = ->
   return Rooms.findOne(Session.get('roomID'))
 
-time_stamp = (obj) ->
-  "#{obj.getMonth()+ 1}/#{obj.getDate()}/#{obj.getFullYear()} @ #{obj.getHours()}:#{obj.getMinutes()}"
+local_time_stamp = (time) ->
+  obj     = new Date(time)
+  minutes = obj.getMinutes()
+  if minutes < 10
+    minutes = "0" + minutes
+  "#{obj.getMonth()+ 1}/#{obj.getDate()}/#{obj.getFullYear()} @ #{obj.getHours()}:#{minutes}"
+
+utc_time_stamp = ()->
+  time = new Date()
+  in_seconds = time.getTime()
+  offset = time.getTimezoneOffset()
+  utc_in_seconds = in_seconds + (offset * 60 * 1000)
+  date_in_utc = new Date(utc_in_seconds)
+  year = date_in_utc.getFullYear()
+  month = date_in_utc.getMonth()
+  date  = date_in_utc.getDate()
+  hours = date_in_utc.getHours()
+  minutes = date_in_utc.getMinutes()
+  return new Date(Date.UTC(year, month, date, hours, minutes))
 
 announce_new_user = (roomID) ->
-  time = new Date()
   console.log("room ID is #{roomID}")
   message = Messages.insert
     name: "Server Message",
     roomID: roomID,
-    message: "#{Session.get('name')} has entered the room on #{time_stamp(time)}"
-    created: time
+    message: "#{Session.get('name')} has entered the room on ",
+    type: 'announcement',
+    created: utc_time_stamp()
   console.log(message)
 
 announce_departure = (roomID) ->
-  time = new Date()
-  console.log(roomID)
   Messages.insert
     name: "Server Message",
     roomID: roomID,
-    message: "#{Session.get('name')} has left the room @#{time_stamp(time)}"
-    created: time
+    message: "#{Session.get('name')} has left the room ",
+    type: "announcement",
+    created: utc_time_stamp()
 
 all_rooms = ->
   rooms = Rooms.find({}, { sort: {time: -1}}).fetch()
@@ -64,7 +80,7 @@ if root.Meteor.is_client
         $("#create_room_errors").html("")
         room = Rooms.insert
           name: room_name
-          created: new Date()
+          created: utc_time_stamp()
         Session.set("roomID", room)
         announce_new_user(room)
       return false
@@ -97,20 +113,26 @@ if root.Meteor.is_client
     roomID = Session.get("roomID")
     Messages.find({'roomID': roomID}, { sort: {time: -1} })
 
+  Template.message.local_timestamp = (message) ->
+    return local_time_stamp(this.created)
+
+  Template.message.message_is_announcement = (message) ->
+    return this.type == "announcement"
+
   # Listen for the following events on the entry template
   Template.entry.events =
     # All keyup events from the #messageBox element
     'keyup #messageBox': (event) ->
       if event.type == "keyup" && event.which == 13 # [ENTER]
         new_message = $("#messageBox")
-        time = new Date()
         # Save values into Mongo
 
         Messages.insert
           name: Session.get('name'),
           roomID: Session.get("roomID"),
           message: new_message.val(),
-          created: new Date()
+          type: "speech",
+          created: utc_time_stamp()
 
         # Clear the input boxes
         new_message.val("")
